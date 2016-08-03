@@ -1,0 +1,66 @@
+<?php
+
+/**
+ *
+ */
+
+/**
+ * Implements hook_help().
+ */
+function newsletter_help($path, $arg) {
+  switch ($path) {
+    case "admin/help#newsletter":
+      return '' . t("Adds the ability to send news and selection of news categories.") . '';
+      break;
+
+  }
+}
+
+/**
+ * Implements hook_menu().
+ */
+function newsletter_menu() {
+  global $user;
+  $items['user/%user/subscriptions'] = array(
+    'title' => 'Subscriptions',
+    'page callback' => 'newsletter_form',
+    //'page arguments' => array('newsletter_form', $user),
+    'access callback' => TRUE,
+    'type' => MENU_LOCAL_TASK,
+    'menu_name' => 'user-menu',
+    'file' => 'user.pages.inc',
+    'file path' => drupal_get_path('module', 'user'),
+  );
+  return $items;
+}
+
+/**
+ * Implements hook_form().
+ */
+function newsletter_form() {
+  module_load_include('inc', 'user', 'user.pages');
+  global $user;
+  $user = user_load($user->uid);
+  $form = drupal_get_form('user_profile_form', $user, 'account', 'custom');
+  return $form;
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function newsletter_form_user_profile_form_alter(&$form, &$form_state, $form_id) {
+  if(isset($form_state['build_info']['args'][2]) &&
+    $form_state['build_info']['args'][2] = 'custom') {
+    $form['picture']['#access'] = FALSE;
+    $form['account']['#access'] = FALSE;
+    $form['#after_build'][] = 'newsletter_timezone_hide';
+  }else {
+    $form['field_get_news']['#access'] = FALSE;
+    $form['field_news_categories']['#access'] = FALSE;
+  }
+}
+
+function newsletter_timezone_hide($form, &$form_state) {
+  $form['timezone']['#access']=FALSE;
+  return $form;
+}

@@ -1,0 +1,4 @@
+name = NewsLetter
+description = Adds the ability to send news and selection of news categories.
+package = Homework
+core = 7.x
