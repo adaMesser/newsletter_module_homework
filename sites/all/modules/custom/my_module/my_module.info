@@ -1,0 +1,3 @@
+name = my_module
+description = ann Multistep customer form
+core = 7.x

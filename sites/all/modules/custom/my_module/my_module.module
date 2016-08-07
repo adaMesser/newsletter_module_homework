@@ -1,0 +1,100 @@
+<?php
+
+function my_module_menu() {
+  $items['myform'] = [
+    'title' => t('My form'),
+    'page callback' => 'my_module_form',
+    'access arguments' => ['access content'],
+    'description' => t('My form'),
+    'menu_name' => 'navigation',
+    //'type' => MENU_CALLBACK,
+  ];
+  return $items;
+}
+//ЗАГАЛЬНА ФОРМА
+function my_module_form() {
+  return drupal_get_form('my_module_my_form');
+}
+
+//ОКРЕМІ ФОРМИ*////////////////////////////////
+// Adds logic to our form builder to give it two pages. It checks a
+// value in $form_state['storage'] to determine if it should display page 2.
+function my_module_my_form($form, $form_state) {
+// Display page 2 if $form_state['storage']['page_two'] is set
+  if (isset($form_state['storage']['page_two'])) {
+    return my_module_my_form_page_two();
+  }
+// Page 1 is displayed if $form_state['storage']['page_two'] is not set
+  $form['name'] = [
+    '#type' => 'fieldset',
+    '#title' => t('Name'),
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE,
+  ];
+  $form['name']['first'] = [
+    '#type' => 'textfield',
+    '#title' => t('First name'),
+    '#default_value' => (isset($form_state['values']['first'])) ? $form_state['values']['first'] : 'First Name',
+    '#description' => "Please enter your first name.",
+    '#size' => 20,
+    '#maxlength' => 20,
+  ];
+  $form['name']['last'] = [
+    '#type' => 'textfield',
+    '#title' => t('Last name'),
+    '#default_value' => (isset($form_state['values']['last'])) ? $form_state['values']['last'] : 'Last Name',
+  ];
+  $form['next'] = [
+    '#type' => 'submit',
+    '#value' => 'Next >>',
+  ];
+  return $form;
+}
+
+// New function created to help make the code more manageable
+function my_module_my_form_page_two() {
+  $form['color'] = [
+    '#type' => 'textfield',
+    '#title' => 'Favorite color',
+  ];
+  $form['submit'] = [
+    '#type' => 'submit',
+    '#value' => 'Submit',
+  ];
+  return $form;
+}
+
+// Modifies this function so that it will respond appropriately based on
+// which page was submitted. If the first page is being submitted,
+// values in the 'storage' array are saved and the form gets
+// automatically reloaded.
+// If page 2 was submitted, we display a message and redirect the
+// user to another page.
+function my_module_my_form_submit($form, &$form_state) {
+// Handle page 1 submissions
+  if ($form_state['clicked_button']['#id'] == 'edit-next') {
+    $form_state['storage']['page_two'] = TRUE; // We set this to determine
+// which elements to display
+// when the page reloads.
+// Values below in the $form_state['storage'] array are saved
+// to carry forward to subsequent pages in the form.
+    $form_state['storage']['page_one_values'] = $form_state['values'];
+    $form_state["rebuild"] = TRUE;   // Added
+  }
+// Handle page 2 submissions
+  else {
+    /*
+    Normally, some code would go here to alter the database with the data
+    collected from the form. Sets a message with drupal_set_message()
+    to validate working code.
+    */
+    drupal_set_message('Your form has been submitted');
+    unset ($form_state['storage']); // This value must be unset for
+// redirection! This is because
+// $form_state['rebuild'] gets set to TRUE
+// when 'storage' is set. See code sample
+// #9 for more on this.
+    $form_state['redirect'] = 'node'; // Redirects the user.
+  }
+}
+

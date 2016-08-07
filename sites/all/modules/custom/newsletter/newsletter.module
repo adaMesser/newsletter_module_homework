@@ -21,27 +21,47 @@ function newsletter_help($path, $arg) {
  */
 function newsletter_menu() {
   global $user;
-  $items['user/%user/subscriptions'] = array(
+  $items['user/%user/subscriptions'] = [
     'title' => 'Subscriptions',
-    'page callback' => 'newsletter_form',
+    'page callback' => 'newsletter_profile_form',
     //'page arguments' => array('newsletter_form', $user),
     'access callback' => TRUE,
     'type' => MENU_LOCAL_TASK,
     'menu_name' => 'user-menu',
     'file' => 'user.pages.inc',
     'file path' => drupal_get_path('module', 'user'),
-  );
+  ];
+  $items['user/register/news_categories'] = [
+    'title' => 'Subscriptions',
+    'page callback' => 'newsletter_register_form',
+    'access callback' => TRUE,
+    'menu_name' => 'user-menu',
+    'file' => 'user.pages.inc',
+    'file path' => drupal_get_path('module', 'user'),
+  ];
   return $items;
 }
 
 /**
  * Implements hook_form().
  */
-function newsletter_form() {
+function newsletter_profile_form() {
   module_load_include('inc', 'user', 'user.pages');
   global $user;
   $user = user_load($user->uid);
   $form = drupal_get_form('user_profile_form', $user, 'account', 'custom');
+
+  return $form;
+}
+
+/**
+ * Implements hook_form().
+ */
+function newsletter_register_form() {
+  module_load_include('inc', 'user', 'user.pages');
+  global $user;
+  $user = user_load($user->uid);
+  $form = drupal_get_form('user_register_form', $user, 'account', 'custom');
   return $form;
 }
 
@@ -49,18 +69,62 @@ function newsletter_form() {
  * Implements hook_form_FORM_ID_alter().
  */
 function newsletter_form_user_profile_form_alter(&$form, &$form_state, $form_id) {
-  if(isset($form_state['build_info']['args'][2]) &&
-    $form_state['build_info']['args'][2] = 'custom') {
+  if (isset($form_state['build_info']['args'][2]) &&
+    $form_state['build_info']['args'][2] = 'custom'
+  ) {
     $form['picture']['#access'] = FALSE;
     $form['account']['#access'] = FALSE;
     $form['#after_build'][] = 'newsletter_timezone_hide';
-  }else {
+  }
+  else {
     $form['field_get_news']['#access'] = FALSE;
     $form['field_news_categories']['#access'] = FALSE;
   }
 }
 
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function newsletter_form_user_register_form_alter(&$form, &$form_state, $form_id) {
+  //доповнить сабміт штукою з приклада
+  //$form['#submit'][] = 'newsletter_form_user_register_form_function';
+  //якщо це кастомна форма
+  if (isset($form_state['build_info']['args'][2]) &&
+    $form_state['build_info']['args'][2] = 'custom'
+  ) {
+    $form['picture']['#access'] = FALSE;
+    $form['account']['#access'] = FALSE;
+    $form['#after_build'][] = 'newsletter_timezone_hide';
+    $form['field_get_news']['#access'] = FALSE;
+    $form['account']['name']['#default_value'] = $_SESSION['account']['name'];
+    $form['account']['mail']['#default_value'] = $_SESSION['account']['mail'];
+  }
+  else /*якщо стандартна форма*/ {
+    $form['field_news_categories']['#access'] = FALSE;
+    $form['actions']['next']['#type'] = 'submit';
+    $form['actions']['next']['#value'] = "Next";
+    $form['actions']['next']['#submit'][] = 'newsletter_form_user_register_form_next_submit';
+
+  }
+}
+
 function newsletter_timezone_hide($form, &$form_state) {
-  $form['timezone']['#access']=FALSE;
+  $form['timezone']['#access'] = FALSE;
   return $form;
+}
+
+/*
+ * next button on first page of reg form
+ */
+function newsletter_form_user_register_form_next_submit($form, &$form_state) {
+  //проверка чекбокса
+
+  $val = $form_state['values'];
+  $_SESSION['account']['name'] = $val['name'];
+  $_SESSION['account']['mail'] = $val['mail'];
+  $message = t('name = ' . $val['name'] . ' mail = ' . $val['mail']);
+  drupal_set_message($message, 'status');
+
+  $form_state['redirect'] = 'user/register/news_categories';
+
 }
